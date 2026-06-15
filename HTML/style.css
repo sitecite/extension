@@ -1,8 +1,22 @@
+/* load default font */
+@font-face {
+    font-family: "Atkinson Hyperlegible Next";
+    src: url(../fonts/atkinson_next.ttf);
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Atkinson Hyperlegible Next";
+    src: url(../fonts/atkinson_next_italic.ttf);
+    font-style: italic;
+}
+
 :root {
     --background: #f6f6f6;
     --color: #000;
-    --font-family: sans-serif
+    --font-family: "Atkinson Hyperlegible Next", sans-serif;
 }
+
 
 body {
     background: var(--background);
@@ -103,15 +117,25 @@ button {
     background: none;
     color: var(--color);
     padding: 5px 10px;
+    cursor: pointer;
 }
 
 button:disabled {
     background: var(--color);
     color: var(--background);
+    cursor: not-allowed;
 }
 
 button:active {
     border: 3px solid var(--color);
+}
+
+button:active:disabled {
+    border-top: 1px solid var(--color);
+    border-bottom: 3px solid var(--color);
+    border-left: 1px solid var(--color);
+    border-right: 3px solid var(--color);
+    cursor: not-allowed;
 }
 
 form {

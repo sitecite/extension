@@ -3,7 +3,7 @@
 Quote and copy your text with ease! Select your text, press a keybind or right click and select "Quote selected text" and a link is automagically copied to your clipboard. You can share the link on a platform such as Discord and the text will automatically show up!
 
 * **[Available on Firefox](https://addons.mozilla.org/en-GB/firefox/addon/sitecite/)**
-* **Chrome coming soon**
+* **[Available on Chrome](https://chromewebstore.google.com/detail/sitecite/nhadodoajmnpakkgidheifkfibphlghm)**
 
 If you need any help, feel free to create an issue on the issues page or to join [the Discord server](https://discord.gg/rPBE2B7dng).
 

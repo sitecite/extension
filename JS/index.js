@@ -6,16 +6,14 @@
 async function fetchUrl(url, authorization = null) {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log(url)
+            headers = {}
             if(authorization) {
-                authorization = `Bearer ${authorization}`
+                headers.Authorization = `Bearer ${authorization}`
             }
             const response = await fetch(url,
                 {
                     method: "GET",
-                    headers: {
-                        Authorization: authorization
-                    },
+                    headers,
                     credentials: "omit"
                 }
             );
@@ -200,12 +198,23 @@ document.getElementById("selfhost-form").addEventListener("submit", async input 
     // store new stored colours
     input.preventDefault()
 
-
     const hostUrl = document.getElementById("host-url").value
 
     if(hostUrl) {
         // custom host
-        const validateHost = await fetchUrl(`${hostUrl}/api/test`)
+        var validateHost
+        try {
+            validateHost = await fetchUrl(`${hostUrl}/api/hello`)
+        } catch(e) {
+            // the user may be an older version, we should try the /api/test endpoint as well
+            try {
+                validateHost = await fetchUrl(`${hostUrl}/api/test`)
+            } catch(e) {
+                // nahh its just broken
+                document.getElementById("selfhost-msg").innerText = "Could not connect!"
+                return
+            }
+        }
         if (validateHost.success) {
             // the host exists and seems to be returning valid things!
             // what we need to do is sign out the user but set baseUrl
@@ -213,14 +222,12 @@ document.getElementById("selfhost-form").addEventListener("submit", async input 
             await browser.storage.local.remove("token")
             await browser.storage.local.set({ baseUrl: hostUrl})
             
-            // disable context menu
-            await browser.runtime.sendMessage('disable-ctx-menu');
-    
             // refresh page so we dont have to bother running the functions and events again.
             document.getElementById("selfhost-msg").innerText = "Success! You're connected to the server!"
             window.location.reload();
+
         } else {
-            document.getElementById("selfhost-msg").innerText = "Could not connect! Are you sure it's a sitecite server?"
+            document.getElementById("selfhost-msg").innerText = "Could not connect! "+validateHost.message
         }
     } else {
         // just a reset to default
@@ -229,10 +236,6 @@ document.getElementById("selfhost-form").addEventListener("submit", async input 
             await browser.storage.local.remove("token")
             await browser.storage.local.remove("baseUrl")
     
-            // disable context menu
-            await browser.runtime.sendMessage('disable-ctx-menu');
-    
-            // refresh page so we dont have to bother running the functions and events again.
             window.location.reload();
         }
     }

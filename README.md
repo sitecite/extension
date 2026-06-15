@@ -1,5 +1,7 @@
 # sitecite extension
 
+![Firefox showing the Wikipedia page of the soundtrack of Interstellar, with the focus being on a context menu with the options "Quote selected text" and "Copy image of selected text"](https://sitecite.dantenl.com/screenshots/firefox_wiki_interstellar_sitecite.png)
+
 Quote and copy your text with ease! Select your text, press a keybind or right click and select "Quote selected text" and a link is automagically copied to your clipboard. You can share the link on a platform such as Discord and the text will automatically show up!
 
 * **[Available on Firefox](https://addons.mozilla.org/en-GB/firefox/addon/sitecite/)**
@@ -10,6 +12,8 @@ If you need any help, feel free to create an issue on the issues page or to join
 ## Manual install
 
 If you want to, you can also manually install the extension. If you're testing things out, you may also be interested in hosting a local instance of sitecite for yourself.
+
+> ⚠️ **NOTE:** If you're instead cloning the repo, note that you will have to rename the manifest to match your browser. For example, if you're using Chrome, rename `chrome.manifest.json` to just `manifest.json`. This is because (for some reason) Firefox and Chrome both have slightly different ways of defining the background scripts.
 
 ### Firefox
 
@@ -34,4 +38,3 @@ Chrome should be pretty easy to install.
 4. Navigate to where you placed the unpacked extension and select the folder
 
 The extension should now be ready! 
-

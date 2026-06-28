@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "sitecite",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Quote websites with image previews!",
     "action": {
         "default_popup": "HTML/index.html"
@@ -33,6 +33,7 @@
         "clipboardWrite"
     ],
     "background": {
+        "type": "module",
         "scripts": [
             "JS/background.js"
         ]

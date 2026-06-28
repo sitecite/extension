@@ -4,33 +4,21 @@
  * @returns {Promise<object>} The result
  */
 async function fetchUrl(url, authorization = null) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            headers = {}
-            if(authorization) {
-                headers.Authorization = `Bearer ${authorization}`
-            }
-            const response = await fetch(url,
-                {
-                    method: "GET",
-                    headers,
-                    credentials: "omit"
-                }
-            );
+    const headers = {};
+    if (authorization) {
+        headers.Authorization = `Bearer ${authorization}`;
+    }
 
-            if (!response.ok) {
-                throw new Error(`Response status: ${response.status}`);
-                reject(false)
-            }
+    const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        credentials: 'omit'
+    });
 
-            const result = await response.json();
-            resolve(result)
-            return
-        } catch (e) {
-            console.error(e.message);
-            reject(false)
-        }
-    })
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
 }
 /**
  * Sends a post request. Mainly intended for local use.
@@ -39,207 +27,203 @@ async function fetchUrl(url, authorization = null) {
  * @param {string} authorization The user's token; if needed
  * @returns 
  */
-function postUrl(url, body, authorization = null) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            console.log("Auth:",authorization)
-            const response = await fetch(url,
-                {
-                    method: "POST",
-                    body: JSON.stringify(body),
-                    headers: {
-                        "Content-type": "application/json",
-                        "Authorization": `Bearer ${authorization}`
-                    },
-                    credentials: "omit"
-                })
+async function postUrl(url, body, authorization = null) {
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (authorization) {
+        headers.Authorization = `Bearer ${authorization}`;
+    }
 
-            const result = await response.json()
-            resolve(result)
-            return
-        } catch (e) {
-            console.error(e.message)
-            reject(false)
-        }
-    })
+    const response = await fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers,
+        credentials: 'omit'
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.json();
 }
 
 async function fetchStyles(baseUrl, token) {
-    const styles = await fetchUrl(`${baseUrl}/api/style`, token)
+    // fetch styles and font list in parallel for speed
+    const [styles, fonts] = await Promise.all([
+        fetchUrl(`${baseUrl}/api/style`, token),
+        fetchUrl(`${baseUrl}/api/fontlist`)
+    ]);
 
-    // load actual styles
-    document.documentElement.style.setProperty('--background', "#" + styles.data.bg_color);
-    document.documentElement.style.setProperty('--color', "#" + styles.data.color);
+    // apply colours
+    const root = document.documentElement;
+    root.style.setProperty('--background', `#${styles.data.bg_color}`);
+    root.style.setProperty('--color', `#${styles.data.color}`);
 
-    // load fonts
-    const fonts = await fetchUrl(`${baseUrl}/api/fontlist`)
-  
-    var selectedFontFileRegular
-    var selectedFontFileItalic
-    var selectedFontBackup
+    // find matching font files
+    const selectedFont = fonts.data.fontList.find(f => f.name === styles.data.font);
+    if (!selectedFont) {
+        console.warn(`Font "${styles.data.font}" not found in font list.`);
+        return;
+    }
 
-    fonts.data.fontList.forEach(font => {
-        if (styles.data.font == font.name) {
-            selectedFontFileRegular = font.file_regular
-            selectedFontFileItalic = font.file_italic
-            selectedFontBackup = font.type
-        }
-    })
+    const { file_regular, file_italic, type } = selectedFont;
+    const fontName = styles.data.font;
 
-    // console.log(sel)
-    const fontFile = new FontFace(
-        styles.data.font,
-        `url(${baseUrl}/fonts/${selectedFontFileRegular})`
-    )
+    // load regular font
+    const regularFont = new FontFace(fontName, `url(${baseUrl}/fonts/${file_regular})`);
+    await regularFont.load().catch(err => console.warn('Regular font load failed:', err));
+    document.fonts.add(regularFont);
 
-    document.fonts.add(fontFile)
+    // load italic font
+    const italicFont = new FontFace(fontName, `url(${baseUrl}/fonts/${file_italic})`, {
+        style: 'italic'
+    });
+    await italicFont.load().catch(err => console.warn('Italic font load failed:', err));
+    document.fonts.add(italicFont);
 
-    const fontFileItalic = new FontFace(
-        styles.data.font,
-        `url(${baseUrl}/fonts/${selectedFontFileItalic})`,
-        {
-            "style": "italic"
-        }
-    )
-
-    document.fonts.add(fontFileItalic)
-    document.documentElement.style.setProperty('--font-family', "'" + styles.data.font + "'," + selectedFontBackup);
+    // apply font-family
+    root.style.setProperty('--font-family', `'${fontName}', ${type}`);
 }
 
-// var baseUrl = null
-//* fetch the api url
+// cache dom references
+const $ = id => document.getElementById(id);
+const hostUrlInput = $('host-url');
+const hostSubmitBtn = $('host-submit');
+const keyForm = $('key-form');
+const keyInput = $('key');
+const setupDiv = $('setup');
+const accountDiv = $('account-section');
+const logoutBtn = $('logout');
+const selfhostForm = $('selfhost-form');
+const selfhostMsg = $('selfhost-msg');
+const openSiteLink = $('open-site');
+const shortcutSpan = $('keyboard-shortcut');
+
 async function main() {
-    const baseUrlStorage = await browser.storage.local.get("baseUrl")
-    const baseUrl = baseUrlStorage.baseUrl || "https://sitecite.dantenl.com"
+    const storage = await browser.storage.local.get(['baseUrl', 'token']);
+    const baseUrl = storage.baseUrl || 'https://sitecite.dantenl.com';
+    const token = storage.token || null;
 
-    console.log(baseUrlStorage)
-    try {
-        if (baseUrlStorage.baseUrl) {
-            document.getElementById("host-url").value = baseUrl
-            const submitBtn = document.getElementById("host-submit")
-            submitBtn.innerText = "save"
+    // update UI with stored base URL
+    if (storage.baseUrl) {
+        hostUrlInput.value = baseUrl;
+        hostSubmitBtn.textContent = 'save';
+    }
+
+    openSiteLink.href = baseUrl;
+
+    // keyboard shortcut for mac
+    const platform = await browser.runtime.getPlatformInfo();
+    if (platform.os === 'mac') {
+        shortcutSpan.innerHTML = `<kbd class="bordered">⌘ (cmd)</kbd> + <kbd class="bordered">⌃ (ctrl)</kbd> + <kbd class="bordered">C</kbd>`;
+    }
+
+    // if token exists, load styles and show account UI
+    if (token) {
+        try {
+            await fetchStyles(baseUrl, token);
+            setupDiv.style.display = 'none';
+            accountDiv.style.display = 'block';
+        } catch (err) {
+            console.error('Failed to load styles:', err);
         }
-    } catch(e) {
-        // might fail if it is empty
-        // we dont care tho
     }
 
-    // update the open site button
-    document.getElementById("open-site").href = baseUrl
-
-    // fill in proper key
-    const platformInfo = await browser.runtime.getPlatformInfo()
-
-    if(platformInfo.os == "mac") {
-        document.getElementById("keyboard-shortcut").innerHTML = `
-       <kbd>Cmd</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd>
-        `
+    console.log(sessionStorage)
+    const msg = await sessionStorage.getItem('selfhostMessage');
+    if (msg) {
+        selfhostMsg.textContent = msg;
+        await sessionStorage.removeItem('selfhostMessage');
     }
-
-    var token = await browser.storage.local.get(["token"]) || null
-
-    if(token) {
-        // user is signed in
-        await fetchStyles(baseUrl, token.token)
-        document.getElementById("setup").style.display = "none"
-        document.getElementById("account-section").style.display = "block"
-    }
-    
 }
 
-//* Handling API key submission
-document.getElementById("key-form").addEventListener("submit", async input => {
-    // store new stored colours
-    input.preventDefault()
+// * handling API key submission
+keyForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-    const baseUrlStorage = await browser.storage.local.get("baseUrl")
-    const baseUrl = baseUrlStorage.baseUrl || "https://sitecite.dantenl.com"
-    
-    const apiKey = document.getElementById("key").value
+    const storage = await browser.storage.local.get('baseUrl');
+    const baseUrl = storage.baseUrl || 'https://sitecite.dantenl.com';
+    const apiKey = keyInput.value.trim();
 
-    const validateToken = await fetchUrl(`${baseUrl}/api/token/validate`, apiKey)
-    if (validateToken.success) {
-        // token is good, store it
-        await browser.storage.local.set({token: apiKey, expire:  validateToken.data.expire })
-
-        // update background and stuff like that
-        await fetchStyles(baseUrl, apiKey)
-        document.getElementById("setup").style.display = "none"
-        document.getElementById("account-section").style.display = "block"
-
-        // enable the selection quote thingy
-        await browser.runtime.sendMessage('enable-ctx-menu');
+    try {
+        const result = await fetchUrl(`${baseUrl}/api/token/validate`, apiKey);
+        if (result.success) {
+            await browser.storage.local.set({
+                token: apiKey,
+                expire: result.data.expire
+            });
+            await fetchStyles(baseUrl, apiKey);
+            setupDiv.style.display = 'none';
+            accountDiv.style.display = 'block';
+            await browser.runtime.sendMessage('enable-ctx-menu');
+        } else {
+            alert('Invalid token. Please check and try again.');
+        }
+    } catch (err) {
+        console.error('Token validation error:', err);
+        alert('Could not validate token. Please check your server URL and token.');
     }
-})
+});
 
-//* Handling sign out request
-document.getElementById("logout").addEventListener("click", async input => {
-    // regenerated the extension api key 
-    input.preventDefault()
-    await browser.storage.local.remove("token")
+// * handling sign out request
+logoutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await browser.storage.local.remove('token');
     window.location.reload();
-})
+});
 
-//* handle setting custom base url
+// * handle setting custom base url
 
 // fancy reset or save button
-document.getElementById("host-url").addEventListener("input", async input => {
-    const hostUrlElem = document.getElementById("host-url")
-    const submitBtn = document.getElementById("host-submit")
-    if (hostUrlElem.value.length > 0) {
-        submitBtn.innerText = "save"
-    } else {
-        submitBtn.innerText = "reset"
-    }
-})
+hostUrlInput.addEventListener('input', () => {
+    hostSubmitBtn.textContent = hostUrlInput.value.length > 0 ? 'save' : 'reset';
+});
 
 // handle submission :smirk:
-document.getElementById("selfhost-form").addEventListener("submit", async input => {
-    // store new stored colours
-    input.preventDefault()
+selfhostForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const hostUrl = hostUrlInput.value.trim();
 
-    const hostUrl = document.getElementById("host-url").value
-
-    if(hostUrl) {
-        // custom host
-        var validateHost
+    if (hostUrl) {
+        // try to validate the host
+        let valid = false;
+        let message = '';
         try {
-            validateHost = await fetchUrl(`${hostUrl}/api/hello`)
-        } catch(e) {
-            // the user may be an older version, we should try the /api/test endpoint as well
+            const resp = await fetchUrl(`${hostUrl}/api/hello`);
+            valid = resp.success;
+            message = resp.message || '';
+        } catch {
+            // fallback to /api/test for older versions
             try {
-                validateHost = await fetchUrl(`${hostUrl}/api/test`)
-            } catch(e) {
-                // nahh its just broken
-                document.getElementById("selfhost-msg").innerText = "Could not connect!"
-                return
+                const resp = await fetchUrl(`${hostUrl}/api/test`);
+                valid = resp.success;
+                message = resp.message || '';
+            } catch {
+                // both failed
+                valid = false;
+                message = 'Could not connect to server.';
             }
         }
-        if (validateHost.success) {
-            // the host exists and seems to be returning valid things!
-            // what we need to do is sign out the user but set baseUrl
-    
-            await browser.storage.local.remove("token")
-            await browser.storage.local.set({ baseUrl: hostUrl})
-            
-            // refresh page so we dont have to bother running the functions and events again.
-            document.getElementById("selfhost-msg").innerText = "Success! You're connected to the server!"
-            window.location.reload();
 
+        if (valid) {
+            await browser.storage.local.remove('token');
+            await browser.storage.local.set({ baseUrl: hostUrl });
+            await sessionStorage.setItem('selfhostMessage', 'Success! You\'re connected to the server!');
+            window.location.reload();
         } else {
-            document.getElementById("selfhost-msg").innerText = "Could not connect! "+validateHost.message
+            selfhostMsg.textContent = `Could not connect! ${message}`;
         }
     } else {
-        // just a reset to default
-        const baseUrlStorage = await browser.storage.local.get("baseUrl")
-        if (baseUrlStorage) {
-            await browser.storage.local.remove("token")
-            await browser.storage.local.remove("baseUrl")
-    
+        // Reset to default
+        const stored = await browser.storage.local.get('baseUrl');
+        if (stored.baseUrl) {
+            await browser.storage.local.remove('token');
+            await browser.storage.local.remove('baseUrl');
+            await sessionStorage.setItem('selfhostMessage', 'Reset to default server.');
             window.location.reload();
         }
     }
-
-})
+});
 
 main()

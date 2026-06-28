@@ -17,17 +17,19 @@
     --font-family: "Atkinson Hyperlegible Next", sans-serif;
 }
 
-
-body {
+html, body {
     background: var(--background);
     color: var(--color);
     font-family: var(--font-family);
-
     width: 300px;
     height: 300px;
+    margin: 0;
+    padding: 0;
+    overflow: scroll;
+    font-size: 16px;
 }
 
-/* Extra small devices (phones, 600px and down) */
+/* extra small devices (phones, 600px and down) */
 @media only screen and (max-width: 600px) {
     body {
         margin-left: 1vw;
@@ -35,7 +37,7 @@ body {
     }
 }
 
-/* Small devices (portrait tablets and large phones, 600px and up) */
+/* small devices (portrait tablets and large phones, 600px and up) */
 @media only screen and (min-width: 600px) {
     body {
         margin-left: 10vw;
@@ -43,7 +45,7 @@ body {
     }
 }
 
-/* Medium devices (landscape tablets, 768px and up) */
+/* medium devices (landscape tablets, 768px and up) */
 @media only screen and (min-width: 768px) {
     body {
         margin-left: 20vw;
@@ -51,19 +53,19 @@ body {
     }
 }
 
-/* Large devices (laptops/desktops, 992px and up) */
+/* large devices (laptops/desktops, 992px and up) */
 @media only screen and (min-width: 992px) {
     body {
-        margin-left: 25vw;
-        margin-right: 25vw;
+        margin-left: 20vw;
+        margin-right: 20vw;
     }
 }
 
-/* Extra large devices (large laptops and desktops, 1200px and up) */
+/* extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1200px) {
     body {
-        margin-left: 30vw;
-        margin-right: 30vw;
+        margin-left: 25vw;
+        margin-right: 25vw;
     }
 }
 
@@ -73,11 +75,6 @@ h1.title {
 
 .secretkeeper {
     display: flex;
-    /* border: solid var(--color); */
-    border-top: 1px solid var(--color);
-    border-bottom: 3px solid var(--color);
-    border-left: 1px solid var(--color);
-    border-right: 3px solid var(--color);
     flex-wrap: nowrap;
     flex-direction: row;
     align-content: stretch;
@@ -88,31 +85,39 @@ h1.title {
 .secret {
     font-family: monospace;
     padding: 5px 10px;
-    width: 100%;
-    background: none;
-    border: none;
 }
 
-.secret::placeholder {
-    color: var(--color);
+.secret.hidden {
     font-style: italic;
-    font-family: monospace;
 }
 
-kbd {
-    padding: 1px;
-    border-left: 2px solid var(--color);
-    border-right: 2px solid var(--color);
-    border-top: 1px solid var(--color);
-    border-bottom: 4px solid var(--color);
-    font-family: monospace;
-}
-
-button {
+/* simple style to handle the default borders */
+.bordered {
     border-top: 1px solid var(--color);
     border-bottom: 3px solid var(--color);
     border-left: 1px solid var(--color);
     border-right: 3px solid var(--color);
+}
+
+/* nicer input */
+input {
+    font-family: var(--font-family);
+    background: none;
+    color: var(--color);
+    padding: 5px 10px;
+    border: none;
+    width: 100%;
+}
+
+/* font selector */
+select {
+    font-family: var(--font-family);
+    background: none;
+    color: var(--color);
+    padding: 5px 10px;
+}
+
+button {
     font-family: var(--font-family);
     background: none;
     color: var(--color);
@@ -131,10 +136,6 @@ button:active {
 }
 
 button:active:disabled {
-    border-top: 1px solid var(--color);
-    border-bottom: 3px solid var(--color);
-    border-left: 1px solid var(--color);
-    border-right: 3px solid var(--color);
     cursor: not-allowed;
 }
 
@@ -158,14 +159,83 @@ a:hover {
     text-decoration: underline 2.5px;
 }
 
-/* nicer input */
-input {
-    border-top: 1px solid var(--color);
-    border-bottom: 3px solid var(--color);
-    border-left: 1px solid var(--color);
-    border-right: 3px solid var(--color);
+/* 
+keyboard shortcut buttons 
+(sync from extension)
+*/
+
+kbd {
+    padding: 1px;
+    font-family: monospace;
+}
+
+/* grid for showing links */
+/* Replace .item-grid with CSS Grid */
+.item-grid {
+    display: grid;
+    /* grid-template-columns: repeat(2, 1fr); */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    /* exactly 2 columns */
+    gap: 0.5rem;
+    justify-items: stretch;
+    align-items: stretch;
+    /* ensures all cells have same height per row */
+}
+
+/* Each item becomes a flex column container */
+.item-grid .item {
     font-family: var(--font-family);
     background: none;
     color: var(--color);
     padding: 5px 10px;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+    /* stack children vertically */
+    height: 100%;
+    /* fill the grid cell height */
+}
+
+/* The text block takes all available space inside the card */
+.item-grid .item .item-text {
+    border: 1px solid var(--color);
+    padding: 2px;
+    flex: 1;
+    overflow: scroll;
+    /* grows to fill remaining space */
+}
+
+/* Management area stays at bottom */
+.item-grid .item .item-management {
+    margin-top: 3px;
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-grid .item .item-management a {
+    /* add ellipsis to long urls */
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.item-grid .item .item-management div {
+    /* make the copy and close button inline */
+    display: inline-flex;
+    gap: 2px;
+}
+
+
+/* constant class, one that never changes to the fancy background colours */
+.constant {
+    background-color: #fff;
+    color: #000;
+    border-color: #000;
+}
+
+#open-site {
+    padding: 2px;
+    text-decoration: none;
 }

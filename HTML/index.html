@@ -12,17 +12,18 @@
     <h1>sitecite.</h1>
     <p>To start using this extension, you can highlight some text and right click and then press "Quote selected text", or press the keybind. By default, this is 
         <span id="keyboard-shortcut">
-            <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd>
+            <kbd class="bordered">Alt</kbd> + <kbd class="bordered">Shift</kbd> + <kbd class="bordered">C</kbd>
         </span>
     </p>
     <p>To customise sitecite and to get an API key, you will need to go to the sitecite website.</p>
-    <a href="#" target="_blank" rel="noopener noreferrer" id="open-site">open the sitecite website</a>
+    <a href="#" target="_blank" rel="noopener noreferrer" id="open-site" class="bordered">open the sitecite website</a>
+    <br>
     <hr>
     <div id="setup">
         <p>To get started, please enter the API key from the website.</p>
-        <form id="key-form" class="secretkeeper">
+        <form id="key-form" class="secretkeeper bordered">
             <input type="text" name="key" id="key" class="secret" placeholder="(enter your API key here)">
-            <button type="submit">save</button>
+            <button class="bordered" type="submit">save</button>
         </form>
     </div>
 
@@ -31,14 +32,14 @@
     </div>
 
     <div id="account-section" style="display: none;">
-        <p>You're currently signed in. <a href="#" id="logout">Sign out?</a></p>
+        <p>You're currently signed in. <a href="#" id="logout">sign out?</a></p>
     </div>
 
     <hr>
     <p>sitecite supports self-hosting! If you're hosting your own instance of sitecite, please enter the base URL here. If you're unsure what this all means, please leave it empty!</p>
-    <form id="selfhost-form" class="secretkeeper">
+    <form id="selfhost-form" class="secretkeeper bordered">
         <input type="text" name="host-url" id="host-url" class="secret" placeholder="https://sitecite.dantenl.com">
-        <button type="submit" id="host-submit">reset</button>
+        <button type="submit" id="host-submit" class="bordered">reset</button>
     </form>
     <div id="selfhost-msg"></div>
     <h6>These instances are not checked by sitecite; use at your own risk. Usage of an external site may mean you are subject to their Terms of Service and Privacy Policy as well.</h6>

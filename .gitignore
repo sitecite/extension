@@ -1,0 +1,10 @@
+#* Main special files by sitecite
+
+# macos created file, definitely not needed
+.DS_Store
+# ignore zip files
+*.zip
+
+# ignore unzipped packages
+sitecite-chrome/
+sitecite-firefox/
